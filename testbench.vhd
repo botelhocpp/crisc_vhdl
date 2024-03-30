@@ -48,12 +48,30 @@ ARCHITECTURE hardware OF testbench IS
     );
     END COMPONENT;
     
+    COMPONENT rom IS
+    PORT (
+        clk : IN STD_LOGIC;
+        addr : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dout : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+    );
+    END COMPONENT;
+    
+    COMPONENT ram IS
+    PORT (
+        clk : IN STD_LOGIC;
+        we : IN STD_LOGIC;
+        addr : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        din : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dout : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+    );
+    END COMPONENT;
+    
     -- Control signals
     SIGNAL clk : STD_LOGIC := '0';
     SIGNAL rst : STD_LOGIC := '0';
     
     -- Inputs
-    SIGNAL inst : STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL addr : STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');
     
     -- Outputs
     SIGNAL zf : STD_LOGIC := '0';
@@ -64,6 +82,7 @@ ARCHITECTURE hardware OF testbench IS
    
     -- Intermediaries
     SIGNAL we : STD_LOGIC := '0';
+    SIGNAL inst : STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');
     SIGNAL din : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
     SIGNAL alu_op_sel : STD_LOGIC_VECTOR(2 DOWNTO 0) := (OTHERS => '0');
     SIGNAL src_sel : STD_LOGIC_VECTOR(1 DOWNTO 0) := (OTHERS => '0');
@@ -71,12 +90,12 @@ ARCHITECTURE hardware OF testbench IS
     SIGNAL src_dout : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
     SIGNAL dst_dout : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
     
-
 BEGIN
     DUT_REGS : register_file PORT MAP (clk, rst, we, src_sel, dst_sel, din, src_dout, dst_dout);
     DUT_ALU : alu PORT MAP (dst_dout, src_dout, alu_op_sel, zf, res);
     DUT_CONTROL_UNIT : control_unit PORT MAP (clk, rst, inst, alu_op, imm_op, alu_op_sel, dst_sel, src_sel, imm);
-    
+    DUT_ROM : rom PORT MAP (clk, addr, inst);
+
     clk <= NOT clk AFTER kCLK_PERIOD/2;
        
     we <= imm_op OR alu_op;
@@ -93,7 +112,7 @@ BEGIN
     PROCESS
     BEGIN
         -- RESET INPUT VARIABLES
-        inst <= "00000000";
+        addr <= "00000000";
         
         -- RESET CONDITION
         rst <= '1';
@@ -104,27 +123,27 @@ BEGIN
         WAIT FOR kCLK_PERIOD;
         
         -- LD R1, A
-        inst <= "11101001";
+        addr <= "00000001";
         WAIT FOR kCLK_PERIOD;
         
         -- LD R2, 3
-        inst <= "11001110";
+        addr <= "00000010";
         WAIT FOR kCLK_PERIOD;
         
         -- ADD R2, R1
-        inst <= "00010110";
+        addr <= "00000011";
         WAIT FOR kCLK_PERIOD;
         
         -- LD R0, F
-        inst <= "11111100";
+        addr <= "00000100";
         WAIT FOR kCLK_PERIOD;
         
         -- ADD R0, R2
-        inst <= "00101000";
+        addr <= "00000101";
         WAIT FOR kCLK_PERIOD;
         
         -- NOP
-        inst <= "00000000";
+        addr <= "00000110";
         WAIT FOR 2*kCLK_PERIOD;
     END PROCESS;
 

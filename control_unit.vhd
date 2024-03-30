@@ -36,11 +36,12 @@ BEGIN
     BEGIN
         -- IMM: 11XXXXDD
         IF(dout_ir(7 DOWNTO 6) = "11") THEN
-            imm_op <= '1';
             alu_op <= '0';
+            imm_op <= '1';
             alu_op_sel <= "000";
-            imm <= dout_ir(5 DOWNTO 2);
             dst_sel <= dout_ir(1 DOWNTO 0);
+            src_sel <= "00";
+            imm <= dout_ir(5 DOWNTO 2);
         
         -- NOP/HALT
         ELSIF(dout_ir = "00000000") THEN
@@ -58,13 +59,14 @@ BEGIN
             alu_op_sel <= dout_ir(6 DOWNTO 4);
             src_sel <= dout_ir(3 DOWNTO 2);
             dst_sel <= dout_ir(1 DOWNTO 0);
+            imm <= "0000";
         
         ELSE
             alu_op <= '0';
             imm_op <= '0';
             alu_op_sel <= "000";
-            dst_sel <= "00";
             src_sel <= "00";
+            dst_sel <= "00";
             imm <= "0000";
             
         END IF;
