@@ -23,75 +23,109 @@ ARCHITECTURE hardware OF testbench IS
     );
     END COMPONENT;
     
+    COMPONENT alu IS
+    GENERIC ( N : INTEGER := kSIZE );
+    PORT (
+        op1 : IN STD_LOGIC_VECTOR(N - 1 DOWNTO 0);
+        op2 : IN STD_LOGIC_VECTOR(N - 1 DOWNTO 0);
+        sel : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+        zf : OUT STD_LOGIC;
+        res : BUFFER STD_LOGIC_VECTOR(N - 1 DOWNTO 0)
+    );
+    END COMPONENT;
+    
+    COMPONENT control_unit IS
+    PORT (
+        clk : IN STD_LOGIC;
+        rst : IN STD_LOGIC;
+        inst : IN STD_LOGIC_VECTOR(7 DOWNTO 0);  
+        alu_op : OUT STD_LOGIC;
+        imm_op : OUT STD_LOGIC;
+        alu_op_sel : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+        dst_sel : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+        src_sel : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+        imm : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+    );
+    END COMPONENT;
+    
     -- Control signals
     SIGNAL clk : STD_LOGIC := '0';
     SIGNAL rst : STD_LOGIC := '0';
     
     -- Inputs
-    SIGNAL we : STD_LOGIC := '0';
-    SIGNAL src_sel : STD_LOGIC_VECTOR(1 DOWNTO 0) := (OTHERS => '0');
-    SIGNAL dst_sel : STD_LOGIC_VECTOR(1 DOWNTO 0) := (OTHERS => '0');
-    SIGNAL din : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL inst : STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');
     
     -- Outputs
+    SIGNAL zf : STD_LOGIC := '0';
+    SIGNAL alu_op : STD_LOGIC := '0';
+    SIGNAL imm_op : STD_LOGIC := '0';
+    SIGNAL imm : STD_LOGIC_VECTOR(3 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL res : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
+   
+    -- Intermediaries
+    SIGNAL we : STD_LOGIC := '0';
+    SIGNAL din : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL alu_op_sel : STD_LOGIC_VECTOR(2 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL src_sel : STD_LOGIC_VECTOR(1 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL dst_sel : STD_LOGIC_VECTOR(1 DOWNTO 0) := (OTHERS => '0');
     SIGNAL src_dout : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
     SIGNAL dst_dout : STD_LOGIC_VECTOR(kSIZE - 1 DOWNTO 0) := (OTHERS => '0');
+    
 
 BEGIN
-    DUT_R0 : register_file PORT MAP (clk, rst, we, src_sel, dst_sel, din, src_dout, dst_dout);
+    DUT_REGS : register_file PORT MAP (clk, rst, we, src_sel, dst_sel, din, src_dout, dst_dout);
+    DUT_ALU : alu PORT MAP (dst_dout, src_dout, alu_op_sel, zf, res);
+    DUT_CONTROL_UNIT : control_unit PORT MAP (clk, rst, inst, alu_op, imm_op, alu_op_sel, dst_sel, src_sel, imm);
     
     clk <= NOT clk AFTER kCLK_PERIOD/2;
+       
+    we <= imm_op OR alu_op;
+    
+    PROCESS(imm_op, alu_op, imm, res)
+    BEGIN
+        IF(imm_op = '1') THEN
+            din <= "0000" & imm;
+        ELSIF(alu_op = '1') THEN 
+            din <= res;
+        END IF;
+    END PROCESS;
     
     PROCESS
     BEGIN
         -- RESET INPUT VARIABLES
-        src_sel <= "00";
-        dst_sel <= "00";
-        we <= '0';
-        din <= (OTHERS => '0');
+        inst <= "00000000";
         
         -- RESET CONDITION
         rst <= '1';
         WAIT FOR kCLK_PERIOD;
         
-        -- WAIT ONE MORE CYCLE
+        -- WAIT FOR NEXT CYCLE
         rst <= '0';
         WAIT FOR kCLK_PERIOD;
         
-        -- LOAD R0
-        din <= "00010000"; -- (1 => '4', OTHERS => '0')
-        dst_sel <= "00";
+        -- LD R1, A
+        inst <= "11101001";
         WAIT FOR kCLK_PERIOD;
         
-        we <= '1';
+        -- LD R2, 3
+        inst <= "11001110";
         WAIT FOR kCLK_PERIOD;
         
-        -- LOAD R1
-        we <= '0';
-        din <= "00110000";
-        dst_sel <= "01";
+        -- ADD R2, R1
+        inst <= "00010110";
         WAIT FOR kCLK_PERIOD;
         
-        we <= '1';
+        -- LD R0, F
+        inst <= "11111100";
         WAIT FOR kCLK_PERIOD;
         
-        -- LOAD R2
-        we <= '0';
-        din <= "01110000";
-        dst_sel <= "10";
+        -- ADD R0, R2
+        inst <= "00101000";
         WAIT FOR kCLK_PERIOD;
         
-        we <= '1';
-        WAIT FOR kCLK_PERIOD;
-        
-        -- LOAD R3
-        we <= '0';
-        din <= "11110000";
-        dst_sel <= "11";
-        WAIT FOR kCLK_PERIOD;
-        
-        we <= '1';
-        WAIT FOR kCLK_PERIOD;
+        -- NOP
+        inst <= "00000000";
+        WAIT FOR 2*kCLK_PERIOD;
     END PROCESS;
 
 END hardware;
