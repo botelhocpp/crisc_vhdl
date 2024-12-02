@@ -19,7 +19,7 @@ ARCHITECTURE Structural OF Testbench IS
     SIGNAL i_Switches   : STD_LOGIC_VECTOR(3 DOWNTO 0) := (OTHERS => '0');
     SIGNAL o_Leds       : STD_LOGIC_VECTOR(3 DOWNTO 0) := (OTHERS => '0');
 BEGIN
-    e_PROCESSOR: ENTITY WORK.CRISC
+    e_CRISC: ENTITY WORK.CRISC
     PORT MAP (
         i_Clk       => i_Clk,
         i_Rst       => i_Rst,
@@ -30,5 +30,5 @@ BEGIN
     i_Clk <= NOT i_Clk AFTER c_CLOCK_50MHZ_PERIOD/2;
     i_Rst <= '1', '0' AFTER c_CLOCK_50MHZ_PERIOD/4;
     
-    i_Switches <= "0000", "0001" AFTER 10*c_CLOCK_50MHZ_PERIOD, "0010" AFTER 20*c_CLOCK_50MHZ_PERIOD;
+    i_Switches <= "0000", "1010" AFTER 10*c_CLOCK_50MHZ_PERIOD, "0010" AFTER 20*c_CLOCK_50MHZ_PERIOD;
 END ARCHITECTURE;

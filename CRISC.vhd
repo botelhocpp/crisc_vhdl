@@ -39,6 +39,7 @@ ARCHITECTURE Structural OF CRISC IS
         "10000111", -- B R3
 
         -- _led_on:
+        "11111110", -- LI R2, F
         "10100010", -- STR R2, R0
         "10000111", -- B R3
 
@@ -47,7 +48,7 @@ ARCHITECTURE Structural OF CRISC IS
     CONSTANT c_RAM_CONTENTS : t_MemoryArray := (
         0 => (OTHERS => '0'),
         1 => (OTHERS => '0'),
-        2 => x"01",
+        2 => x"0A",
         OTHERS => (OTHERS => '0')
     );
     
